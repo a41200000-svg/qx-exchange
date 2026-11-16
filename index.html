@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#080711">
 <meta name="google-site-verification" content="A5ntuJ6pvvK-Uo8HHA96o5bUPFGOg_70p-Nh_rsZ8NM">
 <title>QX Exchange — REAL Launch v5</title>
-<meta name="qx-build" content="QX-REAL-v7-COMPACT-MARKET-TERMINAL">
+<meta name="qx-build" content="QX-REAL-v8-TRENDING-SPOTLIGHT-CLICK-FIX">
 
 <style>
 :root{
@@ -1024,9 +1024,6 @@ html[dir="rtl"] .ads-shell{width:100%!important;max-width:100%!important}
     <p class="swap-status" id="swapStatus">Connect your wallet, enter an amount, then review the quote and confirm in your wallet.</p>
    </div>
   </section>
-  
-<section id="qxAlertPanel" class="panel" style="margin-top:14px"><div class="market-heading"><h2 style="font-size:15px">Price Alerts</h2><span class="tag">BROWSER ALERTS</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><select id="qxAlertDirection" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--text)"><option value="above">Above</option><option value="below">Below</option></select><input id="qxAlertPrice" type="number" min="0" step="any" placeholder="Target price" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--text)"></div><button id="qxAlertCreate" class="btn primary" type="button" style="margin-top:8px">CREATE ALERT</button><div id="qxAlertsList" style="margin-top:10px"></div></section>
-
 <!-- QX REAL ON-CHAIN CONTROL PANEL -->
 <section id="qxOnchainPanel" class="panel" style="display:none;margin-top:18px">
  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
@@ -1331,7 +1328,7 @@ const SOL_RESERVE=0.002;
 
 let appKit,activeWalletProvider=null,walletAddress="",connected=false,solPrice=0,qxWalletInitError=null;
 let walletSolBalance=0,selectedTokenBalance=0,selectedTokenDecimals=0;
-let allPairs=[],newPairs=[],trendingPairs=[],currentCategory="all";
+let allPairs=[],newPairs=[],trendingPairs=[],currentCategory="spot";
 let marketBusy=false,canonicalSolPair=null,selectedToken=null;
 let tradeDirection="buy",balancesHidden=false,lastAssetRows=[];
 let sortMetric="",sortDirection="desc",tradePercent=0;
@@ -2020,7 +2017,7 @@ function safeAdUrl(value,optional=false){
 async function loadPublicAds(){
  const host=adEl("publicAdsList");
  if(!adsBackendReady()){
-  host.innerHTML='<div class="ad-empty">'+qxLangText("Ads feed is not connected yet. Configure the QX Supabase Ads backend to publish and verify paid advertisements.","\u062E\u062F\u0645\u0629 \u0627\u0644\u0625\u0639\u0644\u0627\u0646\u0627\u062A \u063A\u064A\u0631 \u0645\u0631\u0628\u0648\u0637\u0629 \u0628\u0639\u062F. \u064A\u0644\u0632\u0645 \u0625\u0639\u062F\u0627\u062F \u062E\u062F\u0645\u0629 QX \u0627\u0644\u0622\u0645\u0646\u0629 \u0644\u0646\u0634\u0631 \u0627\u0644\u0625\u0639\u0644\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u062F\u0641\u0648\u0639\u0629 \u0648\u0627\u0644\u062A\u062D\u0642\u0642 \u0645\u0646\u0647\u0627.")+'</div>';
+  window.QXRenderTrendingSpotlight?.();
   return;
  }
  try{
@@ -2028,12 +2025,12 @@ async function loadPublicAds(){
   const data=await response.json();
   if(!response.ok)throw new Error(data.error||"Could not load advertisements.");
   const ads=Array.isArray(data.ads)?data.ads:[];
-  if(!ads.length){host.innerHTML='<div class="ad-empty">'+qxLangText("No sponsored advertisements yet.","\u0644\u0627 \u062A\u0648\u062C\u062F \u0625\u0639\u0644\u0627\u0646\u0627\u062A \u0645\u0645\u0648\u0644\u0629 \u062D\u0627\u0644\u064A\u0627\u064B.")+'</div>';return;}
+  if(!ads.length){window.QXRenderTrendingSpotlight?.();return;}
   host.innerHTML=ads.map(ad=>{
    const title=escapeHTML(ad.title||"Sponsored project"),body=escapeHTML(ad.body||""),url=safeAdUrl(ad.url),image=ad.image_url?safeAdUrl(ad.image_url):"";
    return '<article class="ad-card">'+(image?'<img class="ad-image" src="'+escapeHTML(image)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'')+'<div class="ad-copy"><strong>'+title+'</strong><p>'+body+'</p><a href="'+escapeHTML(url)+'" target="_blank" rel="noopener noreferrer">'+qxLangText("Visit project","\u0632\u064A\u0627\u0631\u0629 \u0627\u0644\u0645\u0634\u0631\u0648\u0639")+' \u2197</a></div></article>';
   }).join("");
- }catch(e){console.warn("QX ads feed:",e);host.innerHTML='<div class="ad-empty">'+qxLangText("Advertisements are temporarily unavailable.","\u0627\u0644\u0625\u0639\u0644\u0627\u0646\u0627\u062A \u063A\u064A\u0631 \u0645\u062A\u0627\u062D\u0629 \u0645\u0624\u0642\u062A\u0627\u064B.")+'</div>';}
+ }catch(e){console.warn("QX ads feed:",e);window.QXRenderTrendingSpotlight?.();}
 }
 async function waitForSolanaConfirmation(signature){
  for(let i=0;i<40;i++){
@@ -2671,6 +2668,7 @@ window.QXAdoptMarketFallback=function(pairs){
  const list=Array.isArray(pairs)?pairs:[];
  if(!list.length)return;
  allPairs=bestPairsByMint(list);
+ window.QXMarketPairs=allPairs.slice();window.allPairs=window.QXMarketPairs;
  newPairs=allPairs.filter(p=>qxNum(p?.pairCreatedAt)>Date.now()-14*86400000);
  trendingPairs=allPairs.slice().sort((a,b)=>(qxNum(b?.volume?.h24)+qxNum(b?.txns?.h24?.buys)+qxNum(b?.txns?.h24?.sells))-(qxNum(a?.volume?.h24)+qxNum(a?.txns?.h24?.buys)+qxNum(a?.txns?.h24?.sells)));
  const st=$("marketStatus");if(st)st.textContent="New Solana market · fallback feed · "+allPairs.length.toLocaleString()+" tokens · "+new Date().toLocaleTimeString();
@@ -2877,6 +2875,9 @@ function qxCategoryList(){
 }
 function qxTokenMeta(p){const tx=qxNum(p?.txns?.h24?.buys)+qxNum(p?.txns?.h24?.sells);return '<span class="token-meta"><span>MC/FDV '+escapeHTML(money(p?.marketCap||p?.fdv||0))+'</span><span>LIQ '+escapeHTML(money(p?.liquidity?.usd||0))+'</span><span>VOL '+escapeHTML(money(p?.volume?.h24||0))+'</span><span>TX '+escapeHTML(tx.toLocaleString())+'</span></span>';}
 function renderMarket(){
+ window.QXMarketPairs=Array.isArray(allPairs)?allPairs.slice():[];
+ window.allPairs=window.QXMarketPairs;
+ window.QXRefreshTrendingSpotlight?.();
  const list=sortPairs(qxCategoryList());const countEl=$("coinCount");if(countEl)countEl.textContent=list.length.toLocaleString()+" tokens";const box=$("tokenResults");if(!box)return;
  if(!list.length){box.innerHTML='<div class="market-empty">No new Solana coins are available in this category yet. QX only shows recently created Solana markets from the rolling 30-day discovery window.</div>';return;}
  box.innerHTML=list.slice(0,1000).map((p,i)=>{
@@ -3177,16 +3178,6 @@ loadMarket();
     $('qxRiskScanBtn')?.addEventListener('click',()=>loadOnchain(mint),{once:true});
     $('qxTxBtn')?.addEventListener('click',()=>loadTransactions(mint),{once:true});
   }
-  function addAlert(token){
-    let panel=$('qxAlertPanel');if(!panel)return;
-    const mint=token?.baseToken?.address||token?.mint;const symbol=token?.baseToken?.symbol||token?.symbol||'TOKEN';
-    const input=$('qxAlertPrice'), dir=$('qxAlertDirection');if(!input)return;
-    const create=$('qxAlertCreate');if(create)create.onclick=()=>{const price=Number(input.value);if(!Number.isFinite(price)||price<=0)return;const a=JSON.parse(localStorage.getItem('qxPriceAlertsV1')||'[]');a.unshift({id:Date.now(),mint,symbol,target:price,direction:dir.value,created:Date.now(),triggered:false});localStorage.setItem('qxPriceAlertsV1',JSON.stringify(a.slice(0,30)));renderAlerts();input.value='';};
-    renderAlerts();
-  }
-  function renderAlerts(){
-    const el=$('qxAlertsList');if(!el)return;const a=JSON.parse(localStorage.getItem('qxPriceAlertsV1')||'[]');el.innerHTML=a.length?a.slice(0,12).map((x,i)=>'<div class="qx-list-row"><div><strong>'+esc(x.symbol)+' · '+esc(x.direction==='above'?'Above':'Below')+' '+money(x.target)+'</strong><small>'+esc(x.triggered?'Triggered':'Waiting')+'</small></div><button type="button" data-qx-alert-remove="'+i+'">Remove</button></div>').join(''):'<div class="qx-empty">No price alerts.</div>';el.querySelectorAll('[data-qx-alert-remove]').forEach(b=>b.onclick=()=>{const a=JSON.parse(localStorage.getItem('qxPriceAlertsV1')||'[]');a.splice(Number(b.dataset.qxAlertRemove),1);localStorage.setItem('qxPriceAlertsV1',JSON.stringify(a));renderAlerts()});
-  }
   window.QXUnifiedOpenToken=function(token){
     window.__QXSelectedToken=token;
     const detail=$('detail'),page=$('exchangePage');
@@ -3196,7 +3187,6 @@ loadMarket();
     document.body.classList.add('qx-token-open');
     setWatchButton(token);
     setupOnchain(token);
-    addAlert(token);
     detail.scrollIntoView({behavior:'smooth',block:'start'});
   };
   // One authoritative entry point: preserve the existing live data loader, then enforce one visible terminal.
@@ -3219,7 +3209,6 @@ loadMarket();
   });
   window.addEventListener('DOMContentLoaded',()=>{renderWatch();renderHistory();renderPortfolioPnl();$('qxPnlRefreshBtn')?.addEventListener('click',renderPortfolioPnl)});
   renderWatch();renderHistory();renderPortfolioPnl();
-  setInterval(()=>{const token=window.__QXSelectedToken;const price=Number(token?.priceUsd);if(!Number.isFinite(price)||price<=0)return;const a=JSON.parse(localStorage.getItem('qxPriceAlertsV1')||'[]');let changed=false;a.forEach(x=>{if(x.triggered||x.mint!==(token?.baseToken?.address||token?.mint))return;const hit=x.direction==='above'?price>=x.target:price<=x.target;if(hit){x.triggered=true;changed=true;if('Notification' in window&&Notification.permission==='granted')new Notification('QX Price Alert',{body:x.symbol+' reached '+money(price)});}});if(changed){localStorage.setItem('qxPriceAlertsV1',JSON.stringify(a));renderAlerts()};},15000);
 })();
 </script>
 <script id="qx-live-final-controller">
@@ -3316,7 +3305,7 @@ loadMarket();
       btn.addEventListener('click',function(ev){
         ev.preventDefault();ev.stopPropagation();
         const mint=String(this.dataset.mint||'');
-        const token=(window.allPairs||[]).find(p=>String(p?.baseToken?.address||'')===mint);
+        const token=(window.QXMarketPairs||window.allPairs||[]).find(p=>String(p?.baseToken?.address||'')===mint);
         try{
           if(token&&typeof window.QXOpenToken==='function'){window.QXOpenToken(token);return;}
           if(token&&typeof window.QXUnifiedOpenToken==='function'){window.QXUnifiedOpenToken(token);return;}
@@ -3326,6 +3315,117 @@ loadMarket();
   }
   new MutationObserver(bindQXCards).observe(document.documentElement,{subtree:true,childList:true});
   document.addEventListener('DOMContentLoaded',bindQXCards);
+})();
+</script>
+
+
+<script id="qx-market-layout-order-v3">
+document.addEventListener('DOMContentLoaded',function(){
+  const col=document.querySelector('#marketsPage .market-list-column');
+  if(!col)return;
+  const sort=col.querySelector('.sort-panel');
+  const tabs=col.querySelector('#marketTabs');
+  if(sort&&tabs)col.insertBefore(sort,tabs);
+});
+</script>
+
+
+<style id="qx-trending-spotlight-v3">
+.ads-shell{padding:17px!important;margin:10px 0 14px!important;border-radius:15px!important}
+.ads-shell .ads-head{margin-bottom:12px}
+.ads-shell .ads-title{font-size:15px!important;letter-spacing:.55px}
+.ads-shell .ads-sub{font-size:11px!important}
+#publicAdsList:has(.qx-trending-spotlight){display:block!important}
+.qx-trending-spotlight{position:relative;overflow:hidden;min-height:112px;padding:13px 14px;border:1px solid rgba(126,91,184,.48);border-radius:13px;background:linear-gradient(112deg,rgba(42,27,67,.98),rgba(12,17,31,.98) 72%,rgba(12,32,39,.96));cursor:pointer;transition:opacity .22s ease,transform .22s ease}
+.qx-trending-spotlight:active{transform:scale(.99)}
+.qx-trending-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.qx-trending-label{font-size:9px;font-weight:900;letter-spacing:1.2px;color:#d9c8ff}
+.qx-trending-live{font-size:8px;font-weight:800;letter-spacing:.8px;color:#7dffc0}
+.qx-trending-live:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#4df0a2;margin-right:5px;box-shadow:0 0 9px #4df0a2}
+.qx-trending-token{display:flex;align-items:center;gap:12px;min-width:0}
+.qx-trending-logo{width:43px;height:43px;flex:0 0 43px;border-radius:50%;object-fit:cover;background:#28203b;border:1px solid #604b80}
+.qx-trending-fallback{display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#eee2ff}
+.qx-trending-info{min-width:0;flex:1}
+.qx-trending-name{display:block;font-size:14px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.qx-trending-symbol{display:block;margin-top:3px;font-size:9px;color:#bdb2d0}
+.qx-trending-right{text-align:right;flex:0 0 auto}
+.qx-trending-price{font-size:15px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums}
+.qx-trending-change{margin-top:4px;font-size:10px;font-weight:800}
+.qx-trending-change.up{color:#50e6a1}.qx-trending-change.down{color:#ff7188}.qx-trending-change.neutral{color:#bdb2d0}
+.qx-trending-foot{display:flex;justify-content:space-between;gap:8px;margin-top:12px;padding-top:9px;border-top:1px solid rgba(255,255,255,.09);font-size:9px;color:#a99dbb}
+.qx-trending-dots{display:flex;gap:4px;align-items:center}
+.qx-trending-dots i{width:5px;height:5px;border-radius:50%;background:#625477}
+.qx-trending-dots i.active{width:14px;border-radius:5px;background:#c8a8ff}
+.qx-trending-enter{font-size:9px;font-weight:800;color:#d7c2ff}
+.qx-trending-spotlight.is-changing{opacity:.45;transform:translateY(3px)}
+@media(max-width:520px){.ads-shell{padding:14px!important}.qx-trending-spotlight{min-height:105px;padding:11px}.qx-trending-logo{width:38px;height:38px;flex-basis:38px}.qx-trending-name{font-size:12px}.qx-trending-price{font-size:13px}}
+/* Compact, horizontally scrollable sort and category controls. */
+.sort-panel{padding:7px 8px!important;margin:8px 0!important}
+.sort-title{font-size:8px!important;margin-bottom:5px!important}
+.sort-options{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:7px!important;scrollbar-width:none!important;-webkit-overflow-scrolling:touch}
+.sort-options::-webkit-scrollbar,.market-tabs::-webkit-scrollbar{display:none}
+.sort-option{flex:0 0 auto!important;gap:3px!important;font-size:9px!important}
+.sort-option button{width:20px!important;height:20px!important}
+.market-tabs{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;white-space:nowrap!important;scrollbar-width:none!important;-webkit-overflow-scrolling:touch}
+</style>
+<script id="qx-trending-spotlight-controller-v3">
+(function(){
+  const $=id=>document.getElementById(id);
+  let picks=[],index=0,timer=null,lastMintSet='';
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0;};
+  const money=v=>{const n=num(v);if(!n)return '—';if(n>=1e9)return '$'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return '$'+(n/1e6).toFixed(2)+'M';if(n>=1e3)return '$'+(n/1e3).toFixed(1)+'K';return '$'+n.toFixed(2);};
+  const price=v=>{const n=num(v);if(!n)return '—';if(n>=1)return '$'+n.toLocaleString('en-US',{maximumFractionDigits:4});if(n>=.01)return '$'+n.toFixed(4);if(n>=.0001)return '$'+n.toFixed(6);return '$'+n.toExponential(2);};
+  function tokenScore(p){
+    const vol=num(p?.volume?.h24),liq=num(p?.liquidity?.usd),tx=num(p?.txns?.h24?.buys)+num(p?.txns?.h24?.sells),change=Math.abs(num(p?.priceChange?.h24));
+    return Math.log10(1+vol)*4+Math.log10(1+liq)*2+Math.log10(1+tx)*3+Math.min(change,100)*.025;
+  }
+  function getCandidates(){
+    const src=Array.isArray(window.QXMarketPairs)?window.QXMarketPairs:[];
+    const seen=new Set();
+    return src.filter(p=>{
+      const mint=String(p?.baseToken?.address||'');
+      const sym=String(p?.baseToken?.symbol||'').toUpperCase();
+      if(!mint||seen.has(mint)||!p?.baseToken?.name||!num(p?.priceUsd)||num(p?.liquidity?.usd)<2500)return false;
+      if(['USDC','USDT','USDH','UXD','USDS','WSOL'].includes(sym))return false;
+      seen.add(mint);return true;
+    }).sort((a,b)=>tokenScore(b)-tokenScore(a)).slice(0,4);
+  }
+  function render(){
+    const host=$('publicAdsList');if(!host)return;
+    if(host.querySelector('.ad-card'))return; // Approved paid ads always take priority.
+    if(!picks.length){
+      host.innerHTML='<div class="qx-trending-spotlight"><div class="qx-trending-top"><span class="qx-trending-label">QX TRENDING</span><span class="qx-trending-live">LIVE MARKET</span></div><div class="qx-trending-name">Loading live Solana trending coins…</div><div class="qx-trending-foot"><span>Selected automatically from market activity</span><span class="qx-trending-enter">QX MARKET</span></div></div>';
+      return;
+    }
+    const p=picks[index%picks.length],t=p.baseToken||{},change=num(p.priceChange?.h24),cls=change>0?'up':change<0?'down':'neutral';
+    const image=String(p.info?.imageUrl||'');
+    const logo=image?'<img class="qx-trending-logo" src="'+esc(image)+'" alt="" onerror="this.outerHTML=\'<span class=&quot;qx-trending-logo qx-trending-fallback&quot;>'+esc(String(t.symbol||'?').slice(0,2))+'</span>\'">':'<span class="qx-trending-logo qx-trending-fallback">'+esc(String(t.symbol||'?').slice(0,2))+'</span>';
+    host.innerHTML='<article class="qx-trending-spotlight" role="button" tabindex="0" aria-label="Trade '+esc(t.symbol||t.name||'trending token')+'">'+
+      '<div class="qx-trending-top"><span class="qx-trending-label">QX TRENDING</span><span class="qx-trending-live">LIVE MARKET</span></div>'+
+      '<div class="qx-trending-token">'+logo+'<div class="qx-trending-info"><strong class="qx-trending-name">'+esc(t.name||'Solana token')+'</strong><span class="qx-trending-symbol">'+esc(t.symbol||'TOKEN')+' · 24H VOL '+money(p.volume?.h24)+'</span></div>'+
+      '<div class="qx-trending-right"><div class="qx-trending-price">'+price(p.priceUsd)+'</div><div class="qx-trending-change '+cls+'">'+(change>0?'+':'')+change.toFixed(2)+'%</div></div></div>'+
+      '<div class="qx-trending-foot"><span>Auto-selected by QX · '+(index+1)+' / 4</span><span class="qx-trending-dots">'+picks.map((_,i)=>'<i class="'+(i===index?'active':'')+'"></i>').join('')+'</span><span class="qx-trending-enter">TRADE ↗</span></div></article>';
+    const card=host.querySelector('.qx-trending-spotlight');
+    const open=()=>{const mint=String(p?.baseToken?.address||'');const current=(window.QXMarketPairs||[]).find(x=>String(x?.baseToken?.address||'')===mint)||p;if(typeof window.QXOpenToken==='function')window.QXOpenToken(current);};
+    card?.addEventListener('click',open);
+    card?.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
+  }
+  function refresh(force=false){
+    const next=getCandidates();
+    const signature=next.map(p=>p.baseToken.address).join('|');
+    if(signature&& (force||signature!==lastMintSet)){
+      picks=next;lastMintSet=signature;index=0;
+    }else if(picks.length){
+      const live=new Map((window.QXMarketPairs||[]).map(p=>[String(p?.baseToken?.address||''),p]));
+      picks=picks.map(p=>live.get(String(p.baseToken.address))||p);
+    }
+    render();
+  }
+  window.QXRenderTrendingSpotlight=()=>refresh(true);
+  window.QXRefreshTrendingSpotlight=()=>refresh(false);
+  function start(){refresh(true);if(timer)clearInterval(timer);timer=setInterval(()=>{if(picks.length>1){index=(index+1)%picks.length;render();}},4000);setInterval(()=>refresh(false),30000);}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
 
