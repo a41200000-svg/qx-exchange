@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#080711">
 <meta name="google-site-verification" content="A5ntuJ6pvvK-Uo8HHA96o5bUPFGOg_70p-Nh_rsZ8NM">
 <title>QX Exchange — REAL Launch v5</title>
-<meta name="qx-build" content="QX-REAL-v8-TRENDING-SPOTLIGHT-CLICK-FIX">
+<meta name="qx-build" content="QX-REAL-v10-TERMINAL-DOM-AND-CLICK-FIX">
 
 <style>
 :root{
@@ -614,38 +614,6 @@ html[dir="rtl"] .qx-menu-link{text-align:right}
 @keyframes qxLogoSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.brand-mark,.brand-mark svg{animation:none!important}}
 </style>
-<script id="qx-interaction-stability">
-(function(){
-  function activateTokenSafely(token){
-    if(!token||!token.baseToken||!token.baseToken.address)return;
-    try{
-      window.QXOpenToken(token);
-    }catch(err){
-      console.error('QX token open failed',err);
-      const d=document.getElementById('detail');
-      const p=document.getElementById('exchangePage');
-      if(d&&p){
-        document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
-        p.classList.add('active');
-        d.style.display='block';
-        document.body.classList.add('qx-token-open');
-        d.scrollTop=0;window.scrollTo(0,0);
-      }
-    }
-  }
-  window.addEventListener('DOMContentLoaded',function(){
-    document.querySelectorAll('.coin-button[data-mint]').forEach(btn=>{
-      btn.addEventListener('click',function(e){
-        const mint=btn.dataset.mint;
-        if(!mint)return;
-        const token=(window.allPairs||[]).find(x=>String(x?.baseToken?.address||'')===String(mint));
-        if(token){e.preventDefault();e.stopPropagation();activateTokenSafely(token);}
-      },true);
-    });
-  });
-})();
-</script>
-
 <style id="qx-market-premium-v2">
 /* QX compact market v2 — one authoritative visual layer */
 .market-tabs{padding-bottom:8px!important}
@@ -2639,6 +2607,7 @@ async function qxLoadTrades(token){
 
 function qxSetupChartRanges(token){document.querySelectorAll("#chartRanges [data-chart-range]").forEach(b=>b.onclick=()=>{document.querySelectorAll("#chartRanges [data-chart-range]").forEach(x=>x.classList.toggle("active",x===b));qxLoadLiveChart(token,b.dataset.chartRange);});}
 function openToken(token){
+ window.QXEnsureTerminalPlacement?.();
  selectedToken=token;selectedTokenDecimals=qxTokenDecimals(token);tradeDirection="buy";document.body.classList.add("qx-token-open");
  const amountInput=$("tradeAmountInput");if(amountInput)amountInput.value="";
  const percentRange=$("percentRange");if(percentRange)percentRange.value="25";
@@ -2674,7 +2643,7 @@ window.QXAdoptMarketFallback=function(pairs){
  const st=$("marketStatus");if(st)st.textContent="New Solana market · fallback feed · "+allPairs.length.toLocaleString()+" tokens · "+new Date().toLocaleTimeString();
  renderMarket();
 };
-$("tokenBackBtn")?.addEventListener("click",()=>{document.body.classList.remove("qx-token-open");$("detail").style.display="none";selectedToken=null;pendingSwapOrder=null;window.QXClearTerminalToken?.();if(typeof showPage==="function")showPage("marketsPage");const market=document.getElementById("tokenResults");if(market)setTimeout(()=>market.scrollIntoView({behavior:"smooth",block:"start"}),60);});
+$("tokenBackBtn")?.addEventListener("click",()=>{document.body.classList.remove("qx-token-open");$("detail").style.display="none";selectedToken=null;window.__QXSelectedToken=null;pendingSwapOrder=null;window.QXClearTerminalToken?.();if(typeof showPage==="function")showPage("marketsPage");const market=document.getElementById("tokenResults");if(market)setTimeout(()=>market.scrollIntoView({behavior:"smooth",block:"start"}),60);});
 $("tradeBuyBtn")?.addEventListener("click",()=>setTradeDirection("buy"));
 $("tradeSellBtn")?.addEventListener("click",()=>setTradeDirection("sell"));
 $("swapNowBtn")?.addEventListener("click",()=>qxSwapNow());
@@ -3178,10 +3147,27 @@ loadMarket();
     $('qxRiskScanBtn')?.addEventListener('click',()=>loadOnchain(mint),{once:true});
     $('qxTxBtn')?.addEventListener('click',()=>loadTransactions(mint),{once:true});
   }
+  function ensureTerminalPlacement(){
+    const detail=$('detail'),page=$('exchangePage'),back=$('qxTerminalBack');
+    if(!detail||!page)return false;
+    // The terminal was originally nested in marketsPage. showPage('exchangePage')
+    // hides marketsPage, which caused the black/empty screen. Move the same node
+    // (not a clone) into the exchange page so all existing IDs and listeners survive.
+    if(detail.parentElement!==page){
+      if(back&&back.parentElement===page)back.insertAdjacentElement('afterend',detail);
+      else page.insertBefore(detail,page.firstChild);
+    }
+    return true;
+  }
+  window.QXEnsureTerminalPlacement=ensureTerminalPlacement;
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensureTerminalPlacement,{once:true});
+  else ensureTerminalPlacement();
+
   window.QXUnifiedOpenToken=function(token){
+    if(!token||!token.baseToken||!token.baseToken.address)return;
     window.__QXSelectedToken=token;
+    if(!ensureTerminalPlacement())return;
     const detail=$('detail'),page=$('exchangePage');
-    if(!detail||!page)return;
     page.querySelectorAll(':scope > *').forEach(n=>{if(n!==detail)n.style.display='none'});
     detail.style.display='block';
     document.body.classList.add('qx-token-open');
@@ -3330,6 +3316,11 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 
 
+<style id="qx-terminal-black-screen-fix-v4">
+body.qx-token-open #exchangePage{display:block!important;min-height:0!important}
+body.qx-token-open #exchangePage > #detail{display:block!important;visibility:visible!important;opacity:1!important}
+body.qx-token-open #marketsPage{display:none!important}
+</style>
 <style id="qx-trending-spotlight-v3">
 .ads-shell{padding:17px!important;margin:10px 0 14px!important;border-radius:15px!important}
 .ads-shell .ads-head{margin-bottom:12px}
