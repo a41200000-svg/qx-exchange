@@ -502,7 +502,6 @@ body.qx-token-open #getQuoteBtn{display:none!important}
   </div>
   <div class="qx-order-tabs" role="tablist">
    <button type="button" class="market-tab active" data-qx-order-tab="market">Market</button>
-   <button type="button" class="market-tab" data-qx-order-tab="limit">Limit</button>
    <button type="button" class="market-tab" data-qx-order-tab="history">History</button>
   </div>
   <div id="qxMarketPanel">
@@ -524,9 +523,6 @@ body.qx-token-open #getQuoteBtn{display:none!important}
      <div class="detail-stat"><small>NETWORK</small><strong>Solana</strong></div>
     </div>
    </div>
-  </div>
-  <div id="qxLimitPanel" style="display:none">
-   <div class="panel"><p class="small">Limit orders are currently prepared as a trading interface. Select a Solana market first.</p></div>
   </div>
   <div id="qxHistoryPanel" style="display:none">
    <div id="qxTradeHistory" class="panel"><div class="qx-empty">No QX trades recorded in this browser yet.</div></div>
@@ -720,7 +716,10 @@ body.qx-token-open #getQuoteBtn{display:none!important}
       <input class="percent-range" id="percentRange" type="range" min="0" max="100" step="1" value="25" aria-label="Trade percentage">
       <div class="percent-foot"><span>0%</span><span id="percentValue">25%</span><span>100%</span></div>
      </div>
-     <button class="qx-swap-direction" id="swapDirectionBtn" type="button" aria-label="Swap the positions of the two currencies" title="Reverse the currency order">⇅</button>
+     <div class="qx-trade-side" role="group" aria-label="Trade side">
+      <button class="qx-swap-direction active" id="tradeBuyBtn" type="button">BUY</button>
+      <button class="qx-swap-direction" id="tradeSellBtn" type="button">SELL</button>
+     </div>
      <div class="qx-receive-card">
       <div class="qx-swap-label"><span id="qxReceiveLabel">YOU RECEIVE</span><span id="qxReceiveSymbol">TOKEN</span></div>
       <div class="qx-swap-output" id="swapReceive">Enter amount to estimate</div><span id="swapPay" hidden></span>
@@ -730,7 +729,7 @@ body.qx-token-open #getQuoteBtn{display:none!important}
     <div class="swap-quote"><span>QX commission</span><strong id="qxFeeDisplay">1.00% | fee setup required</strong></div>
     <div class="swap-quote"><span>Route</span><strong id="swapRoute">QX best available route</strong></div>
     <div class="swap-quote"><span>Wallet</span><strong id="swapWallet">Not connected</strong></div>
-    <button class="swap-action" id="swapNowBtn" type="button"><span>SWAP</span><small>Live Jupiter quote · approve in your wallet</small></button>
+    <button class="swap-action" id="swapNowBtn" type="button"><span>BUY NOW</span><small>Real Jupiter quote · real Solana transaction · approve in your wallet</small></button>
     <button class="swap-action" id="getQuoteBtn" type="button" style="display:none" aria-hidden="true" tabindex="-1">UPDATE LIVE QUOTE</button>
     <button class="swap-action swap-secondary" id="confirmSwapBtn" type="button" style="display:none" aria-hidden="true" tabindex="-1">GET LIVE QUOTE FIRST</button>
     <p class="fee-note">QX fee: <strong>1%</strong> per completed swap. The live quote must confirm the full fee before wallet signing. No fee is charged when a swap is not completed.</p>
@@ -2114,13 +2113,13 @@ async function qxSwapNow(){
  if(swapBusy||quoteBusy)return;
  if(!connected||!walletAddress){qxSetSwapStatus("Connect your Solana wallet before swapping.");return;}
  if(!selectedToken){qxSetSwapStatus("Select a Solana token from Markets first.");return;}
- if(button){button.disabled=true;button.querySelector("span").textContent="GETTING LIVE QUOTE…";}
+ if(button){button.disabled=true;button.querySelector("span").textContent=tradeDirection==="buy"?"BUYING…":"SELLING…";}
  try{
   await qxRequestLiveQuote();
   if(!pendingSwapOrder)throw new Error("A live Jupiter quote could not be prepared. Check the amount, token liquidity and wallet balance.");
-  qxSetSwapStatus("Live quote ready. Review the receive amount and QX fee, then press CONFIRM SWAP IN WALLET.");
- }catch(e){qxSetSwapStatus(e?.message||"Could not prepare the swap quote.");}
- finally{if(button){button.disabled=false;button.querySelector("span").textContent="UPDATE QUOTE";}}
+  await qxExecuteSwap();
+ }catch(e){qxSetSwapStatus(e?.message||"Trade failed. No successful on-chain trade was recorded.");}
+ finally{if(button){button.disabled=false;button.querySelector("span").textContent=tradeDirection==="buy"?"BUY NOW":"SELL NOW";}}
 }
 window.QXSwapNow=qxSwapNow;
 async function qxExecuteSwap(){
@@ -2143,7 +2142,7 @@ async function qxExecuteSwap(){
   qxSetSwapStatus("Swap sent. Waiting for Solana confirmation…");
   const conf=await connection.confirmTransaction({signature:sig,blockhash:tx.message.recentBlockhash,lastValidBlockHeight:data.lastValidBlockHeight},"confirmed");
   if(conf.value?.err)throw new Error("Swap failed on-chain: "+JSON.stringify(conf.value.err));
-  pendingSwapOrder=null;$("swapReceive").textContent="Confirmed on Solana";$("confirmSwapBtn").textContent="SWAP CONFIRMED";$("qxFeeDisplay").textContent="1.00% · QX fee account: "+short(feeAccount.toBase58());
+  pendingSwapOrder=null;addHistory(tradeDirection.toUpperCase(),q.amount,sig);$("swapReceive").textContent="Confirmed on Solana";$("confirmSwapBtn").textContent="SWAP CONFIRMED";$("qxFeeDisplay").textContent="1.00% · QX fee account: "+short(feeAccount.toBase58());
   qxSetSwapStatus("Swap confirmed on Solana. Transaction: "+sig);
   const link=$("solscanLink");if(link)link.href="https://solscan.io/token/"+encodeURIComponent(selectedToken?.baseToken?.address||"");
   await refreshTradeBalances();
@@ -2249,7 +2248,8 @@ window.QXAdoptMarketFallback=function(pairs){
  renderMarket();
 };
 $("tokenBackBtn")?.addEventListener("click",()=>{document.body.classList.remove("qx-token-open");$("detail").style.display="none";selectedToken=null;pendingSwapOrder=null;const market=document.getElementById("tokenResults");if(market)setTimeout(()=>market.scrollIntoView({behavior:"smooth",block:"start"}),60);});
-$("swapDirectionBtn")?.addEventListener("click",()=>setTradeDirection(tradeDirection==="buy"?"sell":"buy"));
+$("tradeBuyBtn")?.addEventListener("click",()=>setTradeDirection("buy"));
+$("tradeSellBtn")?.addEventListener("click",()=>setTradeDirection("sell"));
 $("swapNowBtn")?.addEventListener("click",()=>qxSwapNow());
 $("getQuoteBtn")?.addEventListener("click",()=>qxRequestLiveQuote());$("confirmSwapBtn")?.addEventListener("click",()=>qxExecuteSwap().catch(()=>{}));
 $("tradeAmountInput")?.addEventListener("input",()=>{pendingSwapOrder=null;$("confirmSwapBtn").disabled=true;});
@@ -2637,7 +2637,6 @@ loadMarket();
  function walletStatus(){const a=$('walletAddress')?.textContent?.trim();$('qxStatWallet').textContent=a&&a!=='-'?a.slice(0,4)+'…'+a.slice(-4):'Not connected'}
  function openExchange(){const page=$('exchangePage');if(!page){showPage('marketsPage');return}document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));page.classList.add('active');document.querySelectorAll('.qx-menu-link').forEach(b=>b.classList.toggle('active',b.dataset.page==='exchangePage'));walletStatus();renderWatch();renderHistory();if(state.token){$('qxExecutionStatus').textContent='Market selected. Enter an amount and press SWAP to open the swap panel.';}}
  document.querySelectorAll('[data-qx-order-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-qx-order-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('qxMarketPanel').style.display=b.dataset.qxOrderTab==='market'?'block':'none';$('qxLimitPanel').style.display=b.dataset.qxOrderTab==='limit'?'block':'none';$('qxHistoryPanel').style.display=b.dataset.qxOrderTab==='history'?'block':'none';if(b.dataset.qxOrderTab==='history')renderHistory()});
- $('qxSaveTrigger')?.addEventListener('click',()=>{const p=num($('qxTriggerPrice').value);if(!state.token||p===null||p<=0){$('qxTriggerStatus').textContent='Choose a market and enter a valid trigger price.';return}localStorage.setItem('qxTriggerV1',JSON.stringify({mint:state.token.mint,symbol:state.token.symbol,price:p,action:$('qxTriggerAction').value,time:Date.now()}));$('qxTriggerStatus').textContent='Trigger saved on this browser. It will not sign or submit transactions automatically.'});
  async function execute(){
   if(!state.token){$('qxExecutionStatus').textContent='Select a Solana token first.';return}
   const amount=num($('qxTradeAmount').value);if(amount===null||amount<=0){$('qxExecutionStatus').textContent='Enter a valid amount.';return}
