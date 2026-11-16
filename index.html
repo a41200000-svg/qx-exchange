@@ -8,8 +8,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#080711">
 <meta name="google-site-verification" content="A5ntuJ6pvvK-Uo8HHA96o5bUPFGOg_70p-Nh_rsZ8NM">
-<title>QX Exchange — REAL Launch v5</title>
-<meta name="qx-build" content="QX-REAL-v10-TERMINAL-DOM-AND-CLICK-FIX">
+<title>QX Exchange — REAL Launch v11</title>
+<meta name="qx-build" content="QX-REAL-v11-COMPACT-TRADE-MODAL-WALLET-RPC-FIX">
 
 <style>
 :root{
@@ -718,6 +718,53 @@ html[dir="rtl"] .ads-shell{width:100%!important;max-width:100%!important}
 }
 </style>
 
+
+<style id="qx-compact-terminal-v5">
+/* Compact token header: compact inline stats, no oversized stat tiles. */
+body.qx-token-open #detail .detail-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 5px}
+body.qx-token-open #detail .detail-top>div:first-of-type{min-width:0;flex:1}
+body.qx-token-open #detail .detail-top h2{font-size:16px;line-height:1.2;margin:0 0 3px;overflow-wrap:anywhere}
+body.qx-token-open #detail .detail-top img{width:38px;height:38px;flex:0 0 38px}
+body.qx-token-open #detail .qx-token-price-side{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0}
+body.qx-token-open #detail .detail-price{font-size:21px!important;line-height:1.15;margin:0!important;white-space:nowrap}
+body.qx-token-open #detail .detail-change{font-size:11px}
+body.qx-token-open #detail .qx-contract-line{display:flex;align-items:center;gap:7px;margin:5px 0 8px;min-width:0}
+body.qx-token-open #detail .qx-contract-line #detailAddress{display:block;min-width:0;flex:1;margin:0;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:left}
+body.qx-token-open #detail .qx-copy-mint{flex:0 0 auto;border:1px solid #44345d;background:#171126;color:#d8c9ee;border-radius:7px;padding:5px 8px;font-size:9px;font-weight:800}
+body.qx-token-open #detail .detail-stats{display:flex!important;flex-wrap:wrap;gap:6px 12px!important;margin:7px 0 10px!important;padding:8px 0;border-top:1px solid rgba(130,100,170,.18);border-bottom:1px solid rgba(130,100,170,.18)}
+body.qx-token-open #detail .detail-stat{display:flex!important;align-items:baseline;gap:5px;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;min-width:0}
+body.qx-token-open #detail .detail-stat small{font-size:8px;white-space:nowrap;color:#9588a8}
+body.qx-token-open #detail .detail-stat strong{font-size:10px!important;margin:0!important;white-space:nowrap}
+body.qx-token-open #detail .chart-section{margin:7px 0 10px!important;padding:8px!important;border-radius:10px!important}
+body.qx-token-open #detailChart{height:260px!important;min-height:220px!important}
+body.qx-token-open #detail .qx-compact-trade-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0 10px}
+body.qx-token-open #detail .qx-compact-trade-actions button{height:39px;border:0;border-radius:9px;font-size:12px;font-weight:900;letter-spacing:.3px}
+body.qx-token-open #detail .qx-compact-buy{background:#39dfa2;color:#06170f}
+body.qx-token-open #detail .qx-compact-sell{background:#ff6689;color:#250610}
+body.qx-token-open #detail .qx-swap-head{display:none!important}
+body.qx-token-open #detail .qx-trades-panel{margin-top:12px!important;max-height:220px!important}
+body.qx-token-open #detail .qx-user-history{margin-top:10px!important}
+body.qx-token-open #detail .qx-trade-row{font-size:9px!important;padding:7px 8px!important}
+/* The swap is a compact bottom-sheet; the chart remains visible behind it. */
+.qx-trade-modal{position:fixed;inset:0;z-index:10050;display:none;align-items:flex-end;justify-content:center;padding:12px 10px max(10px,env(safe-area-inset-bottom));background:rgba(4,3,10,.48);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.qx-trade-modal.open{display:flex}
+.qx-trade-modal-panel{width:min(100%,540px);max-height:min(72dvh,690px);overflow:auto;overscroll-behavior:contain;border:1px solid #594078;border-radius:17px 17px 12px 12px;background:linear-gradient(160deg,#1a1229,#0c0915);box-shadow:0 18px 70px rgba(0,0,0,.55);padding:12px}
+.qx-trade-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.qx-trade-modal-head strong{font-size:13px;letter-spacing:.3px}
+.qx-trade-modal-close{width:30px;height:30px;border:1px solid #4a385f;border-radius:8px;background:#21182f;color:#fff;font-size:18px;line-height:1}
+.qx-trade-modal .swap-box{margin:0!important;padding:9px!important;border:0!important;background:transparent!important;box-shadow:none!important}
+.qx-trade-modal .qx-swap-purchase{display:grid;grid-template-columns:1fr;gap:7px}
+.qx-trade-modal .percent-panel{margin:7px 0!important;padding:9px!important}
+.qx-trade-modal .qx-receive-card{padding:9px!important}
+.qx-trade-modal .swap-quote{padding:6px 0;font-size:10px}
+.qx-trade-modal .swap-action{min-height:42px;margin-top:7px}
+.qx-trade-modal .swap-status{max-height:58px;margin-top:8px}
+.qx-trade-modal .qx-swap-direction{display:none!important}
+.qx-trade-modal .percent-range,.qx-trade-modal .percent-foot{display:none!important}
+@media(min-width:700px){body.qx-token-open #detailChart{height:360px!important}.qx-trade-modal{align-items:center}.qx-trade-modal-panel{border-radius:17px;max-height:78dvh}}
+@media(max-width:420px){body.qx-token-open #detailChart{height:230px!important;min-height:195px!important}body.qx-token-open #detail .detail-stat small{font-size:7px}body.qx-token-open #detail .detail-stat strong{font-size:9px!important}.qx-trade-modal{padding-left:7px;padding-right:7px}.qx-trade-modal-panel{padding:9px;max-height:75dvh}}
+</style>
+
 </head>
 <body>
 <div class="wrap">
@@ -1291,7 +1338,7 @@ const QX_TOKEN_FEE_LAMPORTS=300000000;
 const QX_JUP_API_KEY="jup_pub_646a02a3199987e777a62f4df5efaa06aeb0cbb5edc35244c9adce130b998621";
 const QX_JUP_REFERRAL_ACCOUNT="UMRAMLr2CqNNSUhVJvdB2bbEGHPwL5n6LpFzTxycmBW";
 const USDC="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-const RPCS=["https://api.mainnet-beta.solana.com","https://api.mainnet.solana.com","https://solana-rpc.publicnode.com","https://rpc.ankr.com/solana"];
+const RPCS=["https://solana-rpc.publicnode.com","https://api.mainnet.solana.com","https://solana.drpc.org","https://rpc.ankr.com/solana","https://api.mainnet-beta.solana.com"];
 const SOL_RESERVE=0.002;
 
 let appKit,activeWalletProvider=null,walletAddress="",connected=false,solPrice=0,qxWalletInitError=null;
@@ -1451,7 +1498,7 @@ async function getJSON(url){
  const timeout=setTimeout(()=>controller.abort(),12000);
  try{
   const r=await fetch(url,{signal:controller.signal,headers:{accept:"application/json"}});
-  if(!r.ok)throw new Error("Market data request failed ("+r.status+")");
+  if(!r.ok)throw new Error("Market data HTTP "+r.status+" from "+new URL(url).host);
   return await r.json();
  }catch(error){
   if(error?.name==="AbortError")throw new Error("Market data request timed out. Retrying automatically.");
@@ -1461,19 +1508,22 @@ async function getJSON(url){
  }
 }
 async function rpc(method,params){
- let lastError;
+ const failures=[];
  for(const endpoint of RPCS){
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),10000);
   try{
-   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),9000);
-   const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method,params}),signal:controller.signal});
-   clearTimeout(timer);
-   if(!response.ok)throw new Error("HTTP "+response.status);
+   const response=await fetch(endpoint,{method:"POST",cache:"no-store",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method,params}),signal:controller.signal});
+   if(!response.ok){failures.push(endpoint+" → HTTP "+response.status);continue;}
    const data=await response.json();
    if(Object.prototype.hasOwnProperty.call(data,"result"))return data.result;
-   lastError=new Error(data.error?.message||"RPC request failed");
-  }catch(e){lastError=e;}
+   failures.push(endpoint+" → "+(data.error?.message||"RPC request failed"));
+  }catch(e){failures.push(endpoint+" → "+(e?.name==="AbortError"?"timeout":(e?.message||"network error")));}
+  finally{clearTimeout(timer);}
  }
- throw lastError||new Error("RPC unavailable");
+ const blocked=failures.some(x=>/HTTP 403/.test(x));
+ const limited=failures.some(x=>/HTTP 429/.test(x));
+ const error=new Error(blocked?"Solana RPC returned HTTP 403 from the available public endpoints. The browser/network may be blocked; retry or configure a dedicated RPC endpoint.":limited?"Solana RPC rate limit (HTTP 429). Wait briefly and retry.":"Solana RPC unavailable. "+failures.slice(0,3).join(" | "));
+ error.rpcFailures=failures;throw error;
 }
 
 function clearPendingSwap(message=""){
@@ -1721,11 +1771,25 @@ async function loadSolPrice(){
    nextPrice=Number(fallback?.solana?.usd||0);
   }catch(e){console.warn("CoinGecko SOL price fallback:",e);}
  }
+ if(!(nextPrice>0)){
+  try{
+   const fallback=await getJSON("https://api.kraken.com/0/public/Ticker?pair=SOLUSD");
+   const row=Object.values(fallback?.result||{})[0];nextPrice=Number(row?.c?.[0]||0);
+  }catch(e){console.warn("Kraken SOL price fallback:",e);}
+ }
  if(Number.isFinite(nextPrice)&&nextPrice>0){
-  solPrice=nextPrice;updateIndicativeEstimate();
+  solPrice=nextPrice;
+  const formatted="$"+nextPrice.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const solUsdEl=$("qxSolUsd");if(solUsdEl)solUsdEl.textContent="SOL/USD: "+formatted;
+  const liveEl=$("qxLivePrice");if(liveEl)liveEl.textContent="Live SOL price: "+formatted;
+  updateIndicativeEstimate();
   if(connected)await loadPortfolio();
   if(allPairs.length)renderMarket();
- }else console.warn("SOL USD price is temporarily unavailable; wallet balances are retained and not treated as zero.");
+ }else{
+  const solUsdEl=$("qxSolUsd");if(solUsdEl)solUsdEl.textContent="SOL/USD: unavailable";
+  const liveEl=$("qxLivePrice");if(liveEl)liveEl.textContent="Live SOL price unavailable";
+  console.warn("SOL USD price is temporarily unavailable; wallet balances are retained and not treated as zero.");
+ }
 }
 
 async function loadPortfolio(){
@@ -2373,10 +2437,12 @@ async function qxBuildJupiterQuote(){
  if(direction==="sell"&&amount>selectedTokenBalance)throw new Error("The amount exceeds your available token balance.");
  const params=new URLSearchParams({inputMint,outputMint,amount:raw,slippageBps:"50",instructionVersion:"V2",platformFeeBps:"100"});
  const response=await fetch("https://api.jup.ag/swap/v1/quote?"+params.toString(),{headers:{accept:"application/json","x-api-key":QX_JUP_API_KEY}});
- const quote=await response.json();if(!response.ok||quote.error)throw new Error(quote.error||quote.errorMessage||"Jupiter quote failed.");
+ const quoteText=await response.text();let quote={};try{quote=JSON.parse(quoteText||"{}");}catch(_){quote={message:quoteText.slice(0,180)};}
+ if(!response.ok)throw new Error("Jupiter quote HTTP "+response.status+(quote.error||quote.errorMessage||quote.message?" · "+(quote.error||quote.errorMessage||quote.message):""));
+ if(quote.error||quote.errorMessage)throw new Error(quote.error||quote.errorMessage);
  if(selectedToken!==token||tradeDirection!==direction||walletAddress!==owner||String($("tradeAmountInput")?.value||"")!==amountText)throw new Error("The selected token, amount or wallet changed while the quote was loading. Request a fresh quote.");
  if(!quote.outAmount)throw new Error("Jupiter returned no executable output for this token.");
- return {quote,inputMint,outputMint,raw,amount,inputDecimals,tokenMint:mint,tokenSymbol:token.baseToken.symbol,direction,walletAddress:owner,quotedAt:Date.now()};
+ return {quote,inputMint,outputMint,raw,amount,inputDecimals,tokenDecimals:verifiedTokenDecimals,tokenMint:mint,tokenSymbol:token.baseToken.symbol,direction,walletAddress:owner,quotedAt:Date.now()};
 }
 async function qxRequestLiveQuote(){
  if(quoteBusy)return;quoteBusy=true;const btn=$("getQuoteBtn");if(btn)btn.disabled=true;
@@ -2435,7 +2501,9 @@ async function qxExecuteSwap(){
   if(q.tokenMint!==selectedToken?.baseToken?.address||q.walletAddress!==walletAddress||Number(q.amount)!==Number($("tradeAmountInput")?.value||0))throw new Error("The selected token, amount or wallet changed. No swap was submitted.");
   qxSetSwapStatus("Building the real on-chain Jupiter transaction…");
   const r=await fetch("https://api.jup.ag/swap/v1/swap",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":QX_JUP_API_KEY},body:JSON.stringify({quoteResponse:q.quote,userPublicKey:walletAddress,wrapAndUnwrapSol:true,feeAccount:feeAccount.toBase58(),trackingAccount:QX_TOKEN_FEE_RECIPIENT,dynamicComputeUnitLimit:true,prioritizationFeeLamports:{priorityLevelWithMaxLamports:{priorityLevel:"veryHigh",maxLamports:1000000}}})});
-  const data=await r.json();if(!r.ok||data.error)throw new Error(data.error||data.errorMessage||"Jupiter swap transaction build failed.");
+  const swapText=await r.text();let data={};try{data=JSON.parse(swapText||"{}");}catch(_){data={message:swapText.slice(0,180)};}
+  if(!r.ok)throw new Error("Jupiter swap build HTTP "+r.status+(data.error||data.errorMessage||data.message?" · "+(data.error||data.errorMessage||data.message):""));
+  if(data.error||data.errorMessage)throw new Error(data.error||data.errorMessage);
   if(!data.swapTransaction)throw new Error("Jupiter did not return a transaction to sign.");
   const provider=window.QXGetActiveWalletProvider?.()||null;if(typeof provider?.signTransaction!=="function")throw new Error("Connected wallet cannot sign the swap transaction. Reconnect the wallet and try again.");
   const tx=VersionedTransaction.deserialize(qxB64ToBytes(data.swapTransaction));
@@ -2447,7 +2515,7 @@ async function qxExecuteSwap(){
   qxSetSwapStatus("Swap sent. Waiting for Solana confirmation…");
   const conf=await connection.confirmTransaction({signature:sig,blockhash:tx.message.recentBlockhash,lastValidBlockHeight:data.lastValidBlockHeight},"confirmed");
   if(conf.value?.err)throw new Error("Swap failed on-chain: "+JSON.stringify(conf.value.err));
-  pendingSwapOrder=null;const tradeTokenDecimals=q.outputMint===SOL?9:verifiedTokenDecimals;
+  pendingSwapOrder=null;const tradeTokenDecimals=q.outputMint===SOL?9:Number(q.tokenDecimals||qxTokenDecimals(selectedToken));
   const outputAmount=qxFromRaw(q.quote.outAmount,tradeTokenDecimals);
   const tokenUsd=Number(selectedToken?.priceUsd||0);
   const solUsd=Number(solPrice||0);
@@ -2485,16 +2553,34 @@ async function refreshTradeBalances(){
  if(!token){if(availableEl)availableEl.textContent="Select a token to view balance";return false;}
  if(!connected||!owner){if(availableEl)availableEl.textContent="Connect wallet to view balance";$("swapWallet").textContent="Not connected";return false;}
  try{
+  // SOL is read first and displayed immediately. A token-account lookup must never
+  // turn a successfully fetched SOL balance into "0" or "unavailable" on BUY.
   const sol=await rpc("getBalance",[owner,{commitment:"confirmed"}]);
-  if(requestId!==qxTradeBalanceRequestId||selectedToken!==token||walletAddress!==owner)return;
-  walletSolBalance=Number(sol?.value||0)/1e9;selectedTokenBalance=0;selectedTokenDecimals=qxTokenDecimals(token);
+  if(requestId!==qxTradeBalanceRequestId||selectedToken!==token||walletAddress!==owner)return false;
+  const lamports=Number(sol?.value);
+  if(!Number.isFinite(lamports)||lamports<0)throw new Error("Solana returned an invalid SOL balance.");
+  walletSolBalance=lamports/1e9;
+  if(tradeDirection==="buy"){
+   const available=Math.max(0,walletSolBalance-SOL_RESERVE);
+   if(availableEl)availableEl.textContent="Available balance: "+available.toLocaleString(undefined,{maximumFractionDigits:9})+" SOL";
+   $("swapWallet").textContent=short(owner);updateTradePercentUI();
+   return true;
+  }
   const res=await rpc("getTokenAccountsByOwner",[owner,{mint},{encoding:"jsonParsed",commitment:"confirmed"}]);
-  if(requestId!==qxTradeBalanceRequestId||selectedToken!==token||walletAddress!==owner)return;
-  for(const item of (res?.value||[]))selectedTokenBalance+=Number(item?.account?.data?.parsed?.info?.tokenAmount?.uiAmountString||item?.account?.data?.parsed?.info?.tokenAmount?.uiAmount||0);
-  const available=tradeDirection==="buy"?Math.max(0,walletSolBalance-SOL_RESERVE):selectedTokenBalance;
-  if(availableEl)availableEl.textContent="Available balance: "+available.toLocaleString(undefined,{maximumFractionDigits:9})+" "+(tradeDirection==="buy"?"SOL":token.baseToken.symbol);
+  if(requestId!==qxTradeBalanceRequestId||selectedToken!==token||walletAddress!==owner)return false;
+  let tokenTotal=0;
+  for(const item of (res?.value||[]))tokenTotal+=Number(item?.account?.data?.parsed?.info?.tokenAmount?.uiAmountString||item?.account?.data?.parsed?.info?.tokenAmount?.uiAmount||0);
+  if(!Number.isFinite(tokenTotal)||tokenTotal<0)throw new Error("Solana returned an invalid token balance.");
+  selectedTokenBalance=tokenTotal;selectedTokenDecimals=qxTokenDecimals(token);
+  if(availableEl)availableEl.textContent="Available balance: "+tokenTotal.toLocaleString(undefined,{maximumFractionDigits:9})+" "+(token.baseToken.symbol||"TOKEN");
   $("swapWallet").textContent=short(owner);updateTradePercentUI();return true;
- }catch(e){if(requestId===qxTradeBalanceRequestId&&selectedToken===token&&walletAddress===owner&&connected){if(availableEl)availableEl.textContent="Balance unavailable";console.warn("QX trade balance refresh",e);}return false;}
+ }catch(e){
+  if(requestId===qxTradeBalanceRequestId&&selectedToken===token&&walletAddress===owner&&connected){
+   if(availableEl)availableEl.textContent="Balance unavailable · tap refresh";
+   console.warn("QX trade balance refresh failed:",e);
+  }
+  return false;
+ }
 }
 
 async function refreshTradeBalance(force=false){return refreshTradeBalances();}
@@ -3417,6 +3503,62 @@ body.qx-token-open #marketsPage{display:none!important}
   window.QXRefreshTrendingSpotlight=()=>refresh(false);
   function start(){refresh(true);if(timer)clearInterval(timer);timer=setInterval(()=>{if(picks.length>1){index=(index+1)%picks.length;render();}},4000);setInterval(()=>refresh(false),30000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
+
+
+<script id="qx-compact-terminal-controller">
+(function(){
+ const $=id=>document.getElementById(id);
+ const detail=$('detail');if(!detail||detail.dataset.qxCompactV5==='1')return;
+ detail.dataset.qxCompactV5='1';
+ const top=detail.querySelector('.detail-top'),price=$('detailPrice'),change=$('detailChange'),address=$('detailAddress'),stats=detail.querySelector('.detail-stats'),chart= $('detailChartWrap');
+ if(top&&price&&change){
+  const side=document.createElement('div');side.className='qx-token-price-side';
+  side.append(price,change);top.appendChild(side);
+ }
+ if(address){
+  const line=document.createElement('div');line.className='qx-contract-line';
+  address.parentNode.insertBefore(line,address);line.append(address);
+  address.title='Full token contract address';
+  const copy=document.createElement('button');copy.type='button';copy.className='qx-copy-mint';copy.textContent='COPY';copy.setAttribute('aria-label','Copy full token contract address');
+  copy.addEventListener('click',async()=>{
+   const value=String(address.textContent||'').trim();if(!value)return;
+   try{await navigator.clipboard.writeText(value);copy.textContent='COPIED';}
+   catch(_){const area=document.createElement('textarea');area.value=value;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();try{document.execCommand('copy');copy.textContent='COPIED';}catch(__){copy.textContent='COPY FAILED';}area.remove();}
+   setTimeout(()=>copy.textContent='COPY',1300);
+  });line.appendChild(copy);
+ }
+ const actions=document.createElement('div');actions.className='qx-compact-trade-actions';actions.innerHTML='<button type="button" class="qx-compact-buy">BUY</button><button type="button" class="qx-compact-sell">SELL</button>';
+ if(chart)chart.insertAdjacentElement('beforebegin',actions);else if(stats)stats.insertAdjacentElement('afterend',actions);
+ // Put the live market feed and the user's confirmed transactions at the very bottom.
+ const live=$('qxTradesPanel'),mine=$('qxUserHistoryPanel'),solscan=$('solscanLink');
+ if(live&&mine&&solscan){solscan.insertAdjacentElement('afterend',live);live.insertAdjacentElement('afterend',mine);}
+ const swapBox=detail.querySelector('.swap-box');
+ const modal=document.createElement('div');modal.className='qx-trade-modal';modal.id='qxTradeModal';modal.setAttribute('aria-hidden','true');modal.innerHTML='<section class="qx-trade-modal-panel" role="dialog" aria-modal="true" aria-label="QX trade confirmation"><div class="qx-trade-modal-head"><strong id="qxTradeModalTitle">BUY TOKEN</strong><button type="button" class="qx-trade-modal-close" aria-label="Close trade window">×</button></div><div id="qxTradeModalBody"></div></section>';
+ document.body.appendChild(modal);
+ const modalBody=modal.querySelector('#qxTradeModalBody'),close=()=>{modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.classList.remove('qx-trade-modal-open');};
+ if(swapBox)modalBody.appendChild(swapBox);
+ const open=direction=>{
+  if(typeof window.setTradeDirection==='function')window.setTradeDirection(direction);
+  else if(typeof setTradeDirection==='function')setTradeDirection(direction);
+  $('tradeBuyBtn')?.classList.toggle('active',direction==='buy');$('tradeSellBtn')?.classList.toggle('active',direction==='sell');
+  $('qxTradeModalTitle').textContent=(direction==='sell'?'SELL ':'BUY ')+String($('detailSymbol')?.textContent||'TOKEN').toUpperCase();
+  modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('qx-trade-modal-open');
+  if(typeof window.QXRefreshRealWalletBalance==='function')window.QXRefreshRealWalletBalance();
+ };
+ actions.querySelector('.qx-compact-buy').addEventListener('click',()=>open('buy'));
+ actions.querySelector('.qx-compact-sell').addEventListener('click',()=>open('sell'));
+ modal.querySelector('.qx-trade-modal-close').addEventListener('click',close);
+ $('tokenBackBtn')?.addEventListener('click',close);$('qxTerminalBack')?.addEventListener('click',close);
+ modal.addEventListener('click',e=>{if(e.target===modal)close();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))close();});
+ // Keep the modal heading and compact BUY/SELL selection in sync with the underlying trade tabs.
+ $('tradeBuyBtn')?.addEventListener('click',()=>{$('qxTradeModalTitle').textContent='BUY '+String($('detailSymbol')?.textContent||'TOKEN').toUpperCase();});
+ $('tradeSellBtn')?.addEventListener('click',()=>{$('qxTradeModalTitle').textContent='SELL '+String($('detailSymbol')?.textContent||'TOKEN').toUpperCase();});
+ // Keep the full mint available for copying while the visible line remains compact.
+ const observer=new MutationObserver(()=>{if(address){address.dataset.fullAddress=address.textContent||'';}});
+ if(address)observer.observe(address,{childList:true,characterData:true,subtree:true});
 })();
 </script>
 
