@@ -2075,38 +2075,74 @@ function qxBytesToB64(bytes){let s="";const a=bytes instanceof Uint8Array?bytes:
 async function qxBuildJupiterQuote(){
  if(!selectedToken)throw new Error("Select a Solana token first.");
  if(!connected||!walletAddress)throw new Error("Connect your Solana wallet first.");
- const amount=Number($("tradeAmountInput")?.value||0);if(!Number.isFinite(amount)||amount<=0)throw new Error("Enter a trade amount greater than zero.");
+ const amountText=String($("tradeAmountInput")?.value||"").trim();
+ if(!amountText||!/^\d+(?:\.\d+)?$/.test(amountText))throw new Error("Enter a valid trade amount.");
+ const amount=Number(amountText);
+ if(!Number.isFinite(amount)||amount<=0)throw new Error("Enter a trade amount greater than zero.");
  const inputMint=tradeDirection==="buy"?SOL:selectedToken.baseToken.address;
  const outputMint=tradeDirection==="buy"?selectedToken.baseToken.address:SOL;
  const inputDecimals=tradeDirection==="buy"?9:qxTokenDecimals(selectedToken);
- const raw=qxToRawAmount(amount,inputDecimals);
+ const raw=qxToRawAmount(amountText,inputDecimals);
  if(tradeDirection==="buy"&&amount>Math.max(0,walletSolBalance-SOL_RESERVE))throw new Error("The amount exceeds your available SOL after the QX reserve.");
  if(tradeDirection==="sell"&&amount>selectedTokenBalance)throw new Error("The amount exceeds your available token balance.");
- const params=new URLSearchParams({inputMint,outputMint,amount:raw,slippageBps:"50",instructionVersion:"V2",platformFeeBps:"100"});
- const response=await fetch("https://api.jup.ag/swap/v1/quote?"+params.toString(),{headers:{accept:"application/json","x-api-key":QX_JUP_API_KEY}});
- const quote=await response.json();if(!response.ok||quote.error)throw new Error(quote.error||quote.errorMessage||"Jupiter quote failed.");
- if(!quote.outAmount)throw new Error("Jupiter returned no executable output for this token.");
- return {quote,inputMint,outputMint,raw,amount,inputDecimals};
+
+ // Jupiter Swap V2 Meta-Aggregator: quote + executable transaction in one response.
+ // QX uses the already-configured Jupiter referral account so the 1.00% fee
+ // is an integrator/referral fee (100 bps). Jupiter's current documentation
+ // specifies a 50–255 bps referral-fee range and 20% of the integrator fee
+ // is retained by Jupiter.
+ const params=new URLSearchParams({
+   inputMint,
+   outputMint,
+   amount:raw,
+   taker:walletAddress,
+   referralAccount:QX_JUP_REFERRAL_ACCOUNT,
+   referralFee:"100"
+ });
+ const response=await fetch("https://api.jup.ag/swap/v2/order?"+params.toString(),{
+   headers:{accept:"application/json","x-api-key":QX_JUP_API_KEY}
+ });
+ const body=await response.text();
+ let order=null;
+ try{order=JSON.parse(body);}catch(_){throw new Error("Jupiter returned an invalid order response.");}
+ if(!response.ok)throw new Error(order?.errorMessage||order?.error||("Jupiter order failed ("+response.status+")."));
+ if(order?.errorCode&&order?.transaction==="")throw new Error(order.errorMessage||("Jupiter could not build this swap (code "+order.errorCode+")."));
+ if(!order?.transaction)throw new Error("Jupiter returned no executable transaction for this trade.");
+ if(!order?.requestId)throw new Error("Jupiter returned no request ID for the executable order.");
+
+ // Do not allow a trade to continue if Jupiter did not apply the requested
+ // 100 bps QX referral fee. This prevents silent under-collection.
+ const feeBps=Number(order?.feeBps);
+ if(feeBps!==100)throw new Error("QX fee verification failed: Jupiter returned "+(Number.isFinite(feeBps)?feeBps:"unknown")+" bps instead of the required 100 bps. The trade was not executed.");
+ if(order?.referralAccount&&String(order.referralAccount)!==String(QX_JUP_REFERRAL_ACCOUNT))throw new Error("QX referral-account verification failed. The trade was not executed.");
+
+ return {order,inputMint,outputMint,raw,amount,amountText,inputDecimals};
 }
 async function qxRequestLiveQuote(){
  if(quoteBusy)return;quoteBusy=true;const btn=$("getQuoteBtn");if(btn)btn.disabled=true;
  try{
-  qxSetSwapStatus("Requesting a fresh executable Jupiter quote with the QX 1% fee…");
+  qxSetSwapStatus("Requesting a fresh executable Jupiter V2 order with the QX 1% fee…");
   const q=await qxBuildJupiterQuote();pendingSwapOrder=q;
-  const out=qxFromRaw(q.quote.outAmount,qxTokenDecimals(q.outputMint===SOL?{tokenDecimals:9}:selectedToken));
+  const out=qxFromRaw(q.order.outAmount,qxTokenDecimals(q.outputMint===SOL?{tokenDecimals:9}:selectedToken));
   const outSymbol=tradeDirection==="buy"?selectedToken.baseToken.symbol:"SOL";
   $("swapReceive").textContent=out.toLocaleString(undefined,{maximumFractionDigits:Math.min(9,qxTokenDecimals(q.outputMint===SOL?{tokenDecimals:9}:selectedToken))})+" "+outSymbol;
-  $("swapPay").textContent=q.amount+" "+(tradeDirection==="buy"?"SOL":selectedToken.baseToken.symbol);
-  $("qxFeeDisplay").textContent="1.00% · included in executable quote";
-  $("swapRoute").textContent=(q.quote.routePlan||[]).map(x=>x?.swapInfo?.label||x?.swapInfo?.ammKey||"Jupiter").filter(Boolean).join(" → ")||"Jupiter best route";
+  $("swapPay").textContent=q.amountText+" "+(tradeDirection==="buy"?"SOL":selectedToken.baseToken.symbol);
+  const feeMint=q.order?.feeMint?String(q.order.feeMint):"";
+  $("qxFeeDisplay").textContent="1.00% · QX referral fee verified"+(feeMint?" · "+short(feeMint):"");
+  $("swapRoute").textContent=q.order?.router?("Jupiter V2 · "+String(q.order.router).toUpperCase()):"Jupiter V2 best route";
   $("confirmSwapBtn").textContent="CONFIRM SWAP IN WALLET";
   $("confirmSwapBtn").style.display="block";
   $("confirmSwapBtn").removeAttribute("aria-hidden");
   $("confirmSwapBtn").removeAttribute("tabindex");
   $("confirmSwapBtn").disabled=false;
-  qxSetSwapStatus("Quote ready. Review the 1% QX fee, route and receive amount, then confirm in your wallet.");
- }catch(e){pendingSwapOrder=null;$("confirmSwapBtn").disabled=true;$("confirmSwapBtn").style.display="none";$("confirmSwapBtn").setAttribute("aria-hidden","true");qxSetSwapStatus(e?.message||"Could not obtain a live quote.");}
- finally{quoteBusy=false;if(btn)btn.disabled=false;}
+  qxSetSwapStatus("Live executable order ready. QX 1% fee verified. Review the route and receive amount, then confirm in your wallet.");
+ }catch(e){
+  pendingSwapOrder=null;
+  $("confirmSwapBtn").disabled=true;
+  $("confirmSwapBtn").style.display="none";
+  $("confirmSwapBtn").setAttribute("aria-hidden","true");
+  qxSetSwapStatus(e?.message||"Could not obtain a live executable order.");
+ }finally{quoteBusy=false;if(btn)btn.disabled=false;}
 }
 async function qxSwapNow(){
  const button=$("swapNowBtn");
@@ -2127,28 +2163,52 @@ async function qxExecuteSwap(){
  swapBusy=true;const btn=$("confirmSwapBtn");if(btn)btn.disabled=true;
  try{
   const q=pendingSwapOrder;
-  if(!q||!q.quote||!q.outputMint)throw new Error("The live quote expired. Press UPDATE QUOTE and review it again.");
-  const feeAccount=await qxEnsureFeeAccount(q.outputMint);
-  qxSetSwapStatus("Building the real on-chain Jupiter transaction…");
-  const r=await fetch("https://api.jup.ag/swap/v1/swap",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":QX_JUP_API_KEY},body:JSON.stringify({quoteResponse:q.quote,userPublicKey:walletAddress,wrapAndUnwrapSol:true,feeAccount:feeAccount.toBase58(),trackingAccount:QX_TOKEN_FEE_RECIPIENT,dynamicComputeUnitLimit:true,prioritizationFeeLamports:{priorityLevelWithMaxLamports:{priorityLevel:"veryHigh",maxLamports:1000000}}})});
-  const data=await r.json();if(!r.ok||data.error)throw new Error(data.error||data.errorMessage||"Jupiter swap transaction build failed.");
-  if(!data.swapTransaction)throw new Error("Jupiter did not return a transaction to sign.");
-  const provider=window.QXGetActiveWalletProvider?.()||null;if(typeof provider?.signTransaction!=="function")throw new Error("Connected wallet cannot sign the swap transaction. Reconnect the wallet and try again.");
-  const tx=VersionedTransaction.deserialize(qxB64ToBytes(data.swapTransaction));
-  qxSetSwapStatus("Review and approve the real swap transaction in your wallet…");
+  if(!q||!q.order||!q.order.transaction||!q.order.requestId)throw new Error("The live Jupiter order expired. Press UPDATE QUOTE and review it again.");
+
+  const provider=window.QXGetActiveWalletProvider?.()||null;
+  if(typeof provider?.signTransaction!=="function")throw new Error("Connected wallet cannot sign the swap transaction. Reconnect the wallet and try again.");
+
+  const feeBps=Number(q.order.feeBps);
+  if(feeBps!==100)throw new Error("QX fee verification failed before signing. The trade was cancelled.");
+
+  qxSetSwapStatus("Review and approve the real Jupiter V2 transaction in your wallet…");
+  const tx=VersionedTransaction.deserialize(qxB64ToBytes(q.order.transaction));
   const signed=await provider.signTransaction(tx);
-  const connection=await qxGetHealthyConnection();
-  const sig=await connection.sendRawTransaction(signed.serialize(),{skipPreflight:false,maxRetries:3,preflightCommitment:"confirmed"});
-  qxSetSwapStatus("Swap sent. Waiting for Solana confirmation…");
-  const conf=await connection.confirmTransaction({signature:sig,blockhash:tx.message.recentBlockhash,lastValidBlockHeight:data.lastValidBlockHeight},"confirmed");
-  if(conf.value?.err)throw new Error("Swap failed on-chain: "+JSON.stringify(conf.value.err));
-  pendingSwapOrder=null;addHistory(tradeDirection.toUpperCase(),q.amount,sig);$("swapReceive").textContent="Confirmed on Solana";$("confirmSwapBtn").textContent="SWAP CONFIRMED";$("qxFeeDisplay").textContent="1.00% · QX fee account: "+short(feeAccount.toBase58());
+  const signedTransaction=qxBytesToB64(signed.serialize());
+
+  qxSetSwapStatus("Submitting the signed transaction to Jupiter for managed Solana execution…");
+  const response=await fetch("https://api.jup.ag/swap/v2/execute",{
+   method:"POST",
+   headers:{"Content-Type":"application/json","x-api-key":QX_JUP_API_KEY},
+   body:JSON.stringify({
+    signedTransaction,
+    requestId:q.order.requestId,
+    ...(q.order.lastValidBlockHeight?{lastValidBlockHeight:q.order.lastValidBlockHeight}:{}),
+    ...(q.order.expireAt?{expireAt:q.order.expireAt}:{})
+   })
+  });
+  const body=await response.text();
+  let result=null;
+  try{result=JSON.parse(body);}catch(_){throw new Error("Jupiter returned an invalid execution response.");}
+  if(!response.ok)throw new Error(result?.error||result?.errorMessage||("Jupiter execution failed ("+response.status+")."));
+  if(result?.status!=="Success"||!result?.signature)throw new Error(result?.error||result?.errorMessage||("Jupiter execution failed with code "+String(result?.code??"unknown")+"." ));
+
+  const sig=String(result.signature);
+  pendingSwapOrder=null;
+  addHistory(tradeDirection.toUpperCase(),q.amount,sig);
+  $("swapReceive").textContent="Confirmed on Solana";
+  $("confirmSwapBtn").textContent="SWAP CONFIRMED";
+  $("qxFeeDisplay").textContent="1.00% · QX referral fee";
   qxSetSwapStatus("Swap confirmed on Solana. Transaction: "+sig);
-  const link=$("solscanLink");if(link)link.href="https://solscan.io/token/"+encodeURIComponent(selectedToken?.baseToken?.address||"");
+  const link=$("solscanLink");if(link)link.href="https://solscan.io/tx/"+encodeURIComponent(sig);
   await refreshTradeBalances();
   await loadPortfolio();
   setTimeout(()=>{if(btn)btn.disabled=false;},900);
- }catch(e){qxSetSwapStatus(e?.message||"Swap failed. No success was recorded.");if(btn)btn.disabled=false;throw e;}finally{swapBusy=false;}
+ }catch(e){
+  qxSetSwapStatus(e?.message||"Swap failed. No success was recorded.");
+  if(btn)btn.disabled=false;
+  throw e;
+ }finally{swapBusy=false;}
 }
 async function refreshTradeBalances(){
  if(!connected||!selectedToken)return;
