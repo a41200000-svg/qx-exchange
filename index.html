@@ -2586,7 +2586,7 @@ function setTradeDirection(dir){
  const amountInput=$("tradeAmountInput");if(amountInput)amountInput.value="";
  const range=$("percentRange");if(range)range.value="25";
  pendingSwapOrder=null;$("confirmSwapBtn").disabled=true;$("confirmSwapBtn").textContent="GET LIVE QUOTE FIRST";$("swapReceive").textContent="Enter amount to estimate";
- qxSetSwapStatus("Currency order reversed. Enter the amount you want to swap.");updateTradePercentUI();refreshTradeBalances();
+ qxSetSwapStatus(tradeDirection==="buy"?"Enter the SOL amount you want to swap, or choose 25%, 50%, 75% or MAX.":"Enter the "+(selectedToken?.baseToken?.symbol||"TOKEN")+" amount you want to swap, or choose 25%, 50%, 75% or MAX.");updateTradePercentUI();refreshTradeBalances();
  if(selectedToken){qxSetupChartRanges(selectedToken);qxLoadLiveChart(selectedToken,"1H");}
 }
 let qxTokenDetailRequestId=0;
