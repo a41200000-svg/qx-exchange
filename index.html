@@ -1309,7 +1309,7 @@ const QX_JUP_API_KEY="jup_pub_646a02a3199987e777a62f4df5efaa06aeb0cbb5edc35244c9
 const QX_JUP_REFERRAL_ACCOUNT="UMRAMLr2CqNNSUhVJvdB2bbEGHPwL5n6LpFzTxycmBW";
 const USDC="EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 const RPCS=["https://api.mainnet-beta.solana.com","https://api.mainnet.solana.com","https://solana-rpc.publicnode.com"];
-const SOL_RESERVE=0.002;
+const SOL_RESERVE=0.0001;
 
 let appKit,activeWalletProvider=null,walletAddress="",connected=false,solPrice=0,qxWalletInitError=null;
 let walletSolBalance=0,selectedTokenBalance=0,selectedTokenDecimals=0;
@@ -1667,7 +1667,7 @@ window.QXGetWalletState=()=>({connected:!!connected,address:walletAddress||""});
 window.QXRPC=rpc;
 window.QXGetActiveWalletProvider=()=>getActiveWalletProvider();
 window.setConnectedWallet=setConnectedWallet;
-window.QXGetWalletSolBalance=()=>walletSolBalance;window.QXGetSelectedTokenBalance=()=>selectedTokenBalance;
+window.QXGetWalletSolBalance=()=>walletSolBalance;window.QXGetSelectedTokenBalance=()=>selectedTokenBalance;window.QXGetSelectedTokenDecimals=()=>selectedTokenDecimals;
 window.QXSetWalletSolBalance=value=>{const n=Number(value);if(Number.isFinite(n)&&n>=0)walletSolBalance=n;};
 window.QXGetTradeDirection=()=>tradeDirection;
 window.QXUpdateTradePercentUI=()=>updateTradePercentUI();
@@ -3298,7 +3298,7 @@ loadMarket();
     const formatted=window.QXGetWalletSolBalance().toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:9});
     setHeaderBalance('ready',formatted+' SOL');
     const terminal=$('qxTerminalSolBalance');if(terminal)terminal.textContent=formatted+' SOL';
-    const available=$('percentAvailable');if(available&&window.QXGetTradeDirection?.()==='buy')available.textContent='Available balance: '+formatted+' SOL';
+    const available=$('percentAvailable');if(available&&window.QXGetTradeDirection?.()==='buy'){const tradeable=Math.max(0,window.QXGetWalletSolBalance()-0.0001);available.textContent='Available balance: '+tradeable.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:9})+' SOL';}
     window.QXUpdateTradePercentUI?.();
     return true;
    }catch(e){
@@ -3494,7 +3494,7 @@ body.qx-token-open #marketsPage{display:none!important}
     const buy=!$("percentPanel")?.classList.contains("sell");
     const sol= num(window.QXGetWalletSolBalance?.() ?? window.walletSolBalance);
     const tok= num(window.QXGetSelectedTokenBalance?.() ?? window.selectedTokenBalance);
-    const available=buy?Math.max(0,sol-num(window.SOL_RESERVE||0.002)):tok;
+    const available=buy?Math.max(0,sol-num(window.SOL_RESERVE||0.0001)):tok;
     const decimals=buy?9:Math.min(12,Number(window.QXGetSelectedTokenDecimals?.()||9));
     const amount=available*p/100;
     range.value=String(p);range.style.setProperty("--progress",p+"%");
